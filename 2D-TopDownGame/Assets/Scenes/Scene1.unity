@@ -2705,7 +2705,7 @@ MonoBehaviour:
   - ...
   - Move about and get used to the feel.
   - When you're ready, follow me upstairs.
-  typingSpeed: 0.06
+  typingSpeed: 1
 --- !u!1 &613214046
 GameObject:
   m_ObjectHideFlags: 0

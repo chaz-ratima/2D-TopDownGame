@@ -12,10 +12,12 @@ public class DialogueManager : MonoBehaviour
     public GameObject canvas;
 
     private bool interact;
+    private bool interact2;
     private bool nearNPC;
     private bool isTalking;
     private bool isAbleToInteract;
-
+    private bool skip;
+    private bool canSkip;
     public string[] lines;
     private int index;
     public float typingSpeed;
@@ -28,28 +30,22 @@ public class DialogueManager : MonoBehaviour
     void Update()
     {
         interact = Input.GetKeyDown(KeyCode.Space);
+        interact2 = Input.GetKeyDown(KeyCode.B);
 
-        // Intial interaction to start dialogue, bring up canvas and deny movement
-        if (!isTalking && interact && nearNPC)
-        {
-            canvas.SetActive(true);
-            StartDialogue();
-            playerInput.NoMoving();
-            isTalking = true;
-        }
+        InitialInteraction();
+        ContinueKey();
+        AvaliableSentence();
+        TextSkip();
 
-        // if text is finished displaying, interaction key is available
-        if (textDisplay.text == lines[index])
-        {
-            isAbleToInteract = true;
-        }
+        Debug.Log(interact);
+    }
 
-        // beings next sentence if able to
-        if (isTalking == true && isAbleToInteract == true && interact)
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
         {
-            isAbleToInteract = false;
-            NextSentence();
-        }
+            nearNPC = true;
+        } else nearNPC = false;
     }
 
     public void StartDialogue()
@@ -57,14 +53,26 @@ public class DialogueManager : MonoBehaviour
         StartCoroutine(TypeLine());
     }
 
+    public void SkipDialogue()
+    {
+        StartCoroutine(SkipLine());
+    }
+
     IEnumerator TypeLine()
     {
         // foreach loop that displays the next letter in index until the word is displayed for that index
         // types in typingSpeed
-        foreach (char letter in lines[index].ToCharArray()) {
+        foreach (char letter in lines[index].ToCharArray()){
             textDisplay.text += letter;
-            yield return new WaitForSeconds(typingSpeed);
+            if (!skip)
+                yield return new WaitForSeconds(typingSpeed);
         }
+    }
+
+    IEnumerator SkipLine()
+    {
+        yield return new WaitForSeconds(1);
+        canSkip = true;
     }
 
     public void NextSentence()
@@ -82,19 +90,62 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            nearNPC = true;
-        } else nearNPC = false;
-    }
-
     public void DialogueEnd()
     {
         // brings up canvas, allows movement
         playerInput.YesMoving();
         canvas.SetActive(false);
         isTalking = false;
+        canSkip = false;
+        skip = false;
     }
+
+    #region DialogueInteractionFunctions
+    public void InitialInteraction()
+    {
+        // Intial interaction to start dialogue, bring up canvas and deny movement
+        if (!isTalking && interact && nearNPC){
+            canvas.SetActive(true);
+            StartDialogue();
+            playerInput.NoMoving();
+            isTalking = true;
+            canSkip = true;
+            skip = false;
+        }
+    }
+
+    public void ContinueKey()
+    {
+        if (isTalking){
+            // if text is finished displaying, interaction key is available
+            if (textDisplay.text == lines[index]){
+                isAbleToInteract = true;
+                skip = false;
+                canSkip=false;
+            }
+        }
+    }
+
+    public void AvaliableSentence(){
+        if (isTalking){
+            // brings next sentence if able to
+            if (interact && isAbleToInteract){
+                isAbleToInteract = false;
+                NextSentence();
+                SkipDialogue();
+            }
+        }
+    }
+
+    public void TextSkip()
+    {
+        if (isTalking){
+            if(canSkip && interact) {
+                // Fills text in before loop is finished
+                skip = true;
+            }
+        }
+
+    }
+    #endregion
 }
