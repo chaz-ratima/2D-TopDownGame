@@ -6,7 +6,7 @@ using TMPro;
 
 public class DialogueManager : MonoBehaviour
 {
-    PlayerInput playerInput;
+    OldPlayerInput playerInput;
     [SerializeField] GameObject playerInputMovement;
     public TextMeshProUGUI textDisplay;
     public GameObject canvas;
@@ -24,7 +24,7 @@ public class DialogueManager : MonoBehaviour
 
     private void Start()
     {
-        playerInput = playerInputMovement.GetComponent<PlayerInput>();
+        playerInput = playerInputMovement.GetComponent<OldPlayerInput>();
     }
 
     void Update()
@@ -36,8 +36,6 @@ public class DialogueManager : MonoBehaviour
         ContinueKey();
         AvaliableSentence();
         TextSkip();
-
-        Debug.Log(interact);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -45,7 +43,15 @@ public class DialogueManager : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             nearNPC = true;
-        } else nearNPC = false;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            nearNPC = false;
+        }
     }
 
     public void StartDialogue()
@@ -103,14 +109,18 @@ public class DialogueManager : MonoBehaviour
     #region DialogueInteractionFunctions
     public void InitialInteraction()
     {
-        // Intial interaction to start dialogue, bring up canvas and deny movement
-        if (!isTalking && interact && nearNPC){
-            canvas.SetActive(true);
-            StartDialogue();
-            playerInput.NoMoving();
-            isTalking = true;
-            canSkip = true;
-            skip = false;
+        if (!isTalking)
+        {
+            // Intial interaction to start dialogue, bring up canvas and deny movement
+            if (nearNPC && interact)
+            {
+                canvas.SetActive(true);
+                StartDialogue();
+                playerInput.NoMoving();
+                isTalking = true;
+                canSkip = true;
+                skip = false;
+            }
         }
     }
 
