@@ -10,19 +10,25 @@ public class NewPlayerController : MonoBehaviour
     #region ListOfVariables
     // Get playerInput c#
     private PlayerInput playerControls;
+    public SwordAttackHorizontal swordAttackH;
+    public SwordAttackVertical swordAttackV;
 
     Rigidbody2D rb;
     Vector2 movementInput;
+    private Vector3 moveDir;
     Animator animator;
 
     public float walkSpeed = 5f;
     public float runSpeed = 10f;
+    public float dashSpeed = 20f;
     public float moveSpeed;
     public bool isSprinting;
+    private bool canDash = true;
     private bool n_canMove = true;
+    public bool canAttack = true;
     public float collisionOffset = 0.02f;
     public ContactFilter2D movementFilter;
-    
+
     // creates list of collisions and will create new based on collisions
     List<RaycastHit2D> castCollisions = new List<RaycastHit2D>();
     #endregion
@@ -74,9 +80,8 @@ public class NewPlayerController : MonoBehaviour
     {
         playerControls = new PlayerInput();
         rb = GetComponent<Rigidbody2D>();
-
-        playerControls.Player.Sprint.performed += x => SprintPressed();
-        playerControls.Player.Sprint.canceled += x => SprintReleased();
+        //playerControls.Player.Sprint.performed += x => SprintPressed();
+        //playerControls.Player.Sprint.canceled += x => SprintReleased();
     }
 
     void Start()
@@ -84,6 +89,7 @@ public class NewPlayerController : MonoBehaviour
         // normalizes  -- not sure if can remove from here and install at better place.
         movementInput = movementInput.normalized;
         animator = GetComponent<Animator>();
+        moveDir = new Vector3(movementInput.x, movementInput.y).normalized;
     }
 
     void FixedUpdate()
@@ -156,20 +162,47 @@ public class NewPlayerController : MonoBehaviour
         } else { CurrentState = PlayerStates.IDLE; }
     }
 
+    void OnSprint()
+    {
+        if (canDash)
+        {
+            moveSpeed = dashSpeed;
+            canDash = false;
+            StartDashTimer();
+        }
+    }
+
+    void StartDashTimer()
+    {
+        StartCoroutine(DashTimer());
+    }
+
+    IEnumerator DashTimer()
+    {
+        yield return new WaitForSeconds(0.2f);
+        moveSpeed = walkSpeed;
+        yield return new WaitForSeconds(1);
+        canDash = true;
+    }
+
     // two scripts that are called when shift is pressed to change value of moveSpeed
-    void SprintPressed(){
+    /*void SprintPressed(){
         moveSpeed = runSpeed;
     }
 
     void SprintReleased(){
         moveSpeed = walkSpeed;
-    }
+    }*/
     #endregion
 
     #region Attacking
     // Attack whenever the space button is pressed
     void OnMeleeAttack(){
-        CurrentState = PlayerStates.ATTACK;
+        if (canAttack)
+        {
+            CurrentState = PlayerStates.ATTACK;
+        }
+
     }
 
     //Returns control of the player state to the player controller
@@ -177,12 +210,56 @@ public class NewPlayerController : MonoBehaviour
         n_stateLock = false;
         n_canMove = true;
 
+        if (swordAttackV.attacking || swordAttackH.attacking)
+        {
+            swordAttackV.attacking = false;
+            swordAttackH.attacking = false;
+            swordAttackV.swordColliderVertical.enabled = false;
+            swordAttackH.swordColliderHorizontal.enabled = false;
+        }
+
         // check if moving and change state based on result
         if (movementInput != Vector2.zero)
         {
             CurrentState = PlayerStates.WALK;
         } else { CurrentState = PlayerStates.IDLE; }
+
+        StartAttackDelay();
     }
+
+    void StartAttackDelay()
+    {
+        StartCoroutine(AttackDelay());
+    }
+
+    IEnumerator AttackDelay()
+    {
+        canAttack = false;
+        yield return new WaitForSeconds(1);
+        canAttack = true;
+    }
+
+    // directional attacking funtions
+    void AttackUpCaller()
+    {
+        swordAttackV.AttackUp();
+    }
+
+    void AttackDownCaller()
+    {
+        swordAttackV.AttackDown();
+    }
+
+    void AttackLeftCaller()
+    {
+        swordAttackH.AttackLeft();
+    }
+
+    void AttackRightCaller()
+    {
+        swordAttackH.AttackRight();
+    }
+
     #endregion
 }
 

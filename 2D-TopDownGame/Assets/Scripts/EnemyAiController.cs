@@ -4,32 +4,30 @@ using UnityEngine;
 
 public class EnemyAiController : MonoBehaviour
 {
-    public float maxHealth = 5f;
-    public float health;
-    public float maxStamina = 5f;
+    /*public float maxStamina = 5f;
     public float stamina;
     public float maxMana = 5f;
-    public float mana;
+    public float mana;*/
 
-    void Start()
+    public float Health
     {
-        health = maxHealth;
-        stamina = maxStamina;
-        mana = maxMana;
-    }
-
-    void Update()
-    {
-
-    }
-
-    void TakeDamage(float damageAmount)
-    {
-        health -= damageAmount;
-
-        if(health <= 0)
-        {
-            Debug.Log("Enemy has died");
+        set {
+            health = value;
+            if(health <= 0)
+            {
+                Defeated();
+            }
+        }
+        get {
+            return health; 
         }
     }
+
+    public float health = 10;
+
+    void Defeated()
+    {
+        Debug.Log("Enemy Died");
+    }
+
 }
